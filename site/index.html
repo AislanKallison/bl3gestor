@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BL3 Gestão – Financeira de consignado</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--navy:#000080;--blue:#0000CC;--green:#14E31F;--bg:#F3F5FB;--card:#fff;--ink:#0B0B3B;--mute:#5A5D80;--line:#DDE1F0;--red:#D6002B;--amb:#B26A00;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#07072B;--card:#101048;--ink:#F2F3FF;--mute:#A6A9D4;--line:#24276F;--blue:#7C7CFF;--red:#FF6B8A;--amb:#FFB84D}}
+:root[data-theme="dark"]{--bg:#07072B;--card:#101048;--ink:#F2F3FF;--mute:#A6A9D4;--line:#24276F;--blue:#7C7CFF;--red:#FF6B8A;--amb:#FFB84D}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.5 'Sora',system-ui,sans-serif;display:flex;min-height:100vh}
+aside{width:232px;background:#000080;color:#fff;padding:20px 12px;position:sticky;top:0;height:100vh;flex-shrink:0;display:flex;flex-direction:column;gap:4px;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.25) transparent}
+aside>*{flex-shrink:0}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px;padding:0 8px 18px}
+aside button{all:unset;box-sizing:border-box;display:block;width:100%;cursor:pointer;padding:11px 12px;border-radius:10px;color:#C9CCFF;font-weight:600;font-size:14px}
+aside button:hover{background:rgba(255,255,255,.08)}
+aside button.on{background:var(--green);color:#03123A}
+aside small{margin-top:auto;color:#9EA2E8;padding:8px;font-size:12px}
+aside small:empty{display:none}
+main{flex:1;min-width:0;padding:24px 28px 60px}
+h1{font-size:24px;margin:0 0 4px;letter-spacing:-.01em}
+.sub{color:var(--mute);margin:0 0 20px}
+.top{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:flex-end;margin-bottom:8px}
+.tools{display:flex;gap:8px;flex-wrap:wrap}
+select,input,.btn{font:600 14px 'Sora',sans-serif;border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:10px 12px;min-height:42px}
+.btn{cursor:pointer;background:var(--navy);color:#fff;border-color:var(--navy)}
+.btn.g{background:var(--green);border-color:var(--green);color:#03123A}
+.btn.s{min-height:32px;padding:4px 10px;font-size:13px}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.grid{display:grid;gap:14px}.k5{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}.two{grid-template-columns:1.4fr 1fr}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.card h2{font-size:15px;margin:0 0 14px}
+.kpi small{color:var(--mute);display:block;font-size:13px}.kpi b{font-size:24px;font-weight:800;display:block;margin-top:2px}
+.kpi.hl{background:var(--navy);color:#fff;border-color:var(--navy)}.kpi.hl small{color:#C9CCFF}
+.cols{display:flex;align-items:flex-end;gap:6px;height:170px}
+.cols div{flex:1;background:var(--blue);border-radius:6px 6px 0 0;min-height:3px;position:relative}
+.cols div:last-child{background:var(--green)}
+.lab{display:flex;gap:6px;color:var(--mute);font-size:11px;margin-top:6px}.lab span{flex:1;text-align:center}
+.rk{display:grid;grid-template-columns:32px 1fr auto;gap:4px 12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.rk:last-child{border:0}
+.pos{width:30px;height:30px;border-radius:50%;background:var(--bg);display:grid;place-items:center;font-weight:800;font-size:13px}
+.pos.p1{background:var(--green);color:#03123A}
+.bar{grid-column:2/4;height:8px;background:var(--bg);border-radius:8px;overflow:hidden}.bar i{display:block;height:100%;background:var(--blue);border-radius:8px}
+.bar.m i{background:var(--green)}
+.mu{color:var(--mute);font-size:13px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;color:var(--mute);font-weight:600;font-size:12px;padding:8px;border-bottom:1.5px solid var(--line);white-space:nowrap}
+td{padding:9px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tw{overflow-x:auto}
+.st{padding:4px 10px;border-radius:99px;font-size:12px;font-weight:700;background:var(--bg)}
+.st.Concretizado{background:#CFF8D2;color:#075A0F}.st.Pendente{background:#FFE3B0;color:#7A4700}.st.Cancelado{background:#FFD3DB;color:#8A0020}.st.AnaliseBanco{background:#D6DBFF;color:#000080}.st.CRCliente{background:#FFE9B8;color:#8A5A00}
+.st.SemPendência,.st.Baixado,.st.Paga{background:#CFF8D2;color:#075A0F}.st.AGFísico,.st.Prevista{background:#FFE3B0;color:#7A4700}.st.AGCRCliente{background:#FFE9B8;color:#8A5A00}.st.ND{background:var(--bg);color:var(--mute)}
+dialog{border:0;border-radius:16px;padding:22px;width:min(440px,92vw);background:var(--card);color:var(--ink)}
+dialog::backdrop{background:rgba(0,0,60,.5)}
+dialog label{display:block;font-size:13px;font-weight:600;margin:10px 0 4px}dialog input,dialog select{width:100%}
+.toast{position:fixed;bottom:calc(20px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:12px 20px;border-radius:12px;font-weight:600;display:none;z-index:9}
+.navsel{width:100%;margin:0 0 8px;background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.25);padding:8px 10px;border-radius:8px;font:600 13px 'Sora',sans-serif}
+body.locked aside,body.locked main{display:none}
+.auth{position:fixed;inset:0;z-index:50;display:grid;place-items:center;overflow:auto;padding:calc(20px + env(safe-area-inset-top,0px)) 16px calc(20px + env(safe-area-inset-bottom,0px));background:linear-gradient(160deg,#000080 0%,#00005A 60%,#07072B 100%)}
+.acard{background:var(--card);color:var(--ink);border-radius:20px;padding:28px;width:min(440px,100%);box-shadow:0 20px 60px rgba(0,0,40,.5)}
+.acard h1{font-size:24px;margin:14px 0 4px}
+.al{display:block;font-size:13px;font-weight:600;margin:12px 0 4px}
+.acard input,.acard select{width:100%}
+.pw{position:relative}.pw input{padding-right:84px}.pw .lk{position:absolute;right:8px;top:50%;transform:translateY(-50%)}
+.lk{background:none;border:0;color:var(--blue);font:600 13px 'Sora',sans-serif;cursor:pointer;padding:8px 4px;min-height:36px}
+.alinks{display:flex;justify-content:space-between;flex-wrap:wrap;margin-top:8px}
+.aerr{color:var(--red);font-size:13px;min-height:20px;margin:8px 0 0}
+.anote{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13px;margin:10px 0}
+.gbtn{width:100%;background:#fff;color:#1F1F1F;border:1.5px solid #DADCE0;display:flex;gap:10px;justify-content:center;align-items:center}
+.or{display:flex;align-items:center;gap:10px;color:var(--mute);font-size:12px;margin:14px 0}.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+.ucard{background:rgba(255,255,255,.08);border-radius:10px;padding:10px 12px;margin-bottom:8px;display:flex;flex-direction:column;gap:2px;overflow-wrap:anywhere}
+.ucard span{font-size:12px;color:#9EA2E8;font-weight:400}
+.navout{display:inline-block;width:auto;padding:6px 0 0;margin-top:4px;color:#C9CCFF;text-decoration:underline;font-size:13px}
+.vl{font-size:11px;color:#9EA2E8;margin:4px 2px}
+.st.Aguardando{background:#FFE3B0;color:#7A4700}.st.Ematendimento{background:#D6DBFF;color:#000080}.st.Resolvido{background:#CFF8D2;color:#075A0F}
+@media(max-width:900px){body{flex-direction:column}aside{width:100%;height:auto;position:static;flex-direction:column;align-items:stretch;padding:12px;gap:4px}
+main{padding:16px 14px 60px}.two{grid-template-columns:1fr}}
+</style>
+</head>
+<body class="locked">
+<aside id="nav">
+  <div class="brand"><svg width="34" height="34" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#14E31F"/><path d="M50 18c-18 0-32 12-32 27 0 9 5 17 13 22-1 6-4 10-8 14 9 0 16-3 21-7 2 .3 4 .4 6 .4 18 0 32-12 32-27S68 18 50 18z" fill="#fff"/><text x="50" y="52" text-anchor="middle" font-family="Sora,sans-serif" font-weight="800" font-size="20" fill="#0000CC">BL3</text></svg>BL3 Gestão</div>
+  <div id="roleBox" style="padding:0 8px 10px"></div>
+  <div id="navBtns"></div>
+  <small id="navFoot"></small>
+</aside>
+<main id="main"></main>
+<div class="toast" id="toast" role="status"></div>
+<input type="file" id="impFile" accept=".xlsx,.xls,.csv" style="display:none" onchange="importarExcel(this)" aria-label="Importar planilha de contratos">
+<div class="auth" id="auth"><div class="acard" id="authBox"></div></div>
+
+<dialog id="dlg"><h2 style="margin:0 0 6px">Novo contrato</h2>
+  <label for="f_cli">Cliente</label><input id="f_cli" placeholder="Nome completo">
+  <label for="f_cpf">CPF</label><input id="f_cpf" placeholder="000.000.000-00" inputmode="numeric" maxlength="14">
+  <label for="f_nasc">Data de nascimento</label><input id="f_nasc" type="date">
+  <label for="f_tel">Telefone/WhatsApp</label><input id="f_tel" placeholder="(00) 00000-0000" inputmode="tel">
+  <label for="f_pm">Promotora</label><select id="f_pm" onchange="fillPr()"></select><label for="f_pr">Vendedor</label><select id="f_pr"></select>
+  <label for="f_pd">Produto</label><select id="f_pd"></select>
+  <label for="f_cv">Convênio</label><select id="f_cv"></select>
+  <label for="f_tab">Tabela</label><input id="f_tab" placeholder="Ex: Tabela 1, Tabela Price...">
+  <label for="f_mat">Matrícula/nº do benefício</label><input id="f_mat" placeholder="Ex: 123.456.789-0">
+  <label for="f_v">Valor bruto (R$)</label><input id="f_v" type="number" min="500" step="100" value="10000">
+  <label for="f_vl">Valor líquido (R$)</label><input id="f_vl" type="number" min="0" step="100" placeholder="Opcional">
+  <label for="f_pz">Prazo (parcelas)</label><input id="f_pz" type="number" min="12" max="96" value="84">
+  <label for="f_aver">Data de averbação</label><input id="f_aver" type="date">
+  <label for="f_obs">Observações</label><textarea id="f_obs" rows="2" style="width:100%;font:500 16px 'Sora',sans-serif;padding:13px 14px;border:1.5px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)"></textarea>
+  <p id="f_err" role="alert" style="color:var(--red);font-size:13px;margin:8px 0 0;display:none">Informe o nome do cliente e um valor válido.</p>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px"><button class="btn" style="background:var(--card);color:var(--ink);border-color:var(--line)" onclick="dlg.close()">Cancelar</button><button class="btn g" onclick="addC()">Salvar contrato</button></div>
+</dialog>
+<script>
+var $=function(s){return document.querySelector(s)};
+var brl=function(n){return n.toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0})};
+/* ===== SUPABASE — cole aqui a URL e a chave "anon public" do seu projeto ===== */
+var SUPABASE_URL='https://ctmwsxvkdrffvdbaxlwj.supabase.co';
+var SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0bXdzeHZrZHJmZnZkYmF4bHdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2OTgyNTgsImV4cCI6MjEwNjI3NDI1OH0.RMMht8-0wDp_gHoRKO1f3ZOiAeX3xwOzjS8jvwn1FPg';
+var RECOVERY=/type=recovery/.test(location.hash+location.search);
+var LINK_ERRO=/error_code=|error=access_denied/.test(location.hash+location.search);
+var sb=null;
+try{if(window.supabase&&SUPABASE_URL.indexOf('http')===0&&SUPABASE_ANON_KEY.length>20)sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY)}catch(e){}
+/* Enquanto sb for null, o sistema roda 100% em modo de demonstração (dados de mentira só no navegador).
+   Assim que SUPABASE_URL/SUPABASE_ANON_KEY forem preenchidos, login, cadastro, Google, "esqueci minha
+   senha" E os contratos/esteira/pendências/comissões/rankings/auditoria passam a ler e gravar de
+   verdade no banco do Supabase, com cada perfil vendo só o que a política do banco permite. */
+var PM=['AC Consignado','M&C Cred','Nossa Agência','PrimeCred'];
+var PR=[],PRM=[],PRT=[],PRUID=[];
+if(!sb){PR=['Ana Souza','Bruno Lima','Carla Mendes','Diego Rocha','Eduarda Alves','Felipe Costa','Gabriela Nunes','Heitor Dias','Isabela Reis','João Pedro'];
+ PRM=[3,3,3,0,0,2,2,2,1,1]; /* índices já na nova ordem alfabética de PM: PrimeCred=3, AC Consignado=0, Nossa Agência=2, M&C Cred=1 */
+ PRT=['Corretor','Corretor','Colaborador','Corretor','Colaborador','Corretor','Colaborador','Colaborador','Corretor','Colaborador'];
+ PRUID=PR.map(function(){return null})}
+var RP={'Corretor':70,'Colaborador':40,'Gestor':0};
+var CANAIS=['WhatsApp','Chat do site','Telefone'];
+var ASSUNTOS=['Dúvida sobre parcela','Atualização cadastral','Saldo devedor','Reclamação','Nova proposta','Status do contrato'];
+var AUD=[];
+var PERM={Admin:['dash','est','pend','rkp','rkd','com','atend','rel','aud','perm','planos'],Gestor:['dash','est','pend','rkp','rkd','com','atend','rel'],Corretor:['dash','est','pend','atend','rel'],Colaborador:['dash','est','atend']};
+var NAV=[['dash','Dashboard'],['est','Esteira de contratos'],['pend','Pendências'],['rkp','Ranking de vendas'],['rkd','Ranking de produtos'],['com','Comissões'],['atend','Atendimento'],['rel','Relatórios'],['aud','Auditoria'],['perm','Permissões'],['planos','Planos e faturamento']];
+var INTEG={hermes:'',deepseek:''};
+var PLANO={};PM.forEach(function(n,i){PLANO[i]=i%2===0?'ia':'basic'});
+function meLabel(){return S.role==='Admin'?'Admin':(PR[S.me]||'')+' ('+S.role+')'}
+function alog(a,d){AUD.unshift({t:new Date(),u:meLabel(),a:a,d:d});
+ if(sb&&CUR&&CUR.id)sb.from('auditoria').insert({usuario_id:CUR.id,acao:a,detalhe:d}).then(function(){},function(){})}
+var PD=['Novo contrato','Refinanciamento','Portabilidade','Cartão consignado','Saque complementar'];
+var CV=['INSS','SIAPE','Governo estadual','Prefeitura'];
+var BK=['Banco Alfa','Banco Beta','Banco Gama'];
+var ST=['Analise Banco','Concretizado','CR Cliente','Pendente','Cancelado'];
+var PRODST=['Concretizado','CR Cliente'];
+var FISICO_OPT=['-','Sem Pendência','AG. Físico','Baixado'];
+var COMST_OPT=['AG. CR Cliente','Prevista','Paga'];
+function stClass(s){s=String(s||'').replace(/\s+/g,'');return s==='-'?'ND':s}
+var META=60000;
+var COM={'Novo contrato':4.5,'Refinanciamento':3.8,'Portabilidade':5.2,'Cartão consignado':8,'Saque complementar':6};
+var MOT=['Documento ilegível','Falta comprovante de renda','Assinatura divergente','Margem insuficiente'];
+var seed=42;function rnd(){seed=(seed*16807)%2147483647;return seed/2147483647}
+var NM=['Maria','José','Antônia','Francisco','Raimundo','Lúcia','João','Marta','Pedro','Helena','Sebastião','Rita'],SN=['da Silva','Oliveira','Pereira','Santos','Ferreira','Barbosa','Nogueira','Câmara'];
+var T=[],C=[];
+if(!sb){
+ for(var ti=0;ti<26;ti++){var tp=Math.floor(rnd()*PR.length),ia=rnd()<.55,stw=rnd(),tst=stw<.4?'Aguardando':stw<.75?'Em atendimento':'Resolvido';
+  T.push({id:5000+ti,cli:NM[Math.floor(rnd()*NM.length)]+' '+SN[Math.floor(rnd()*SN.length)],canal:CANAIS[Math.floor(rnd()*3)],ass:ASSUNTOS[Math.floor(rnd()*6)],ia:ia,p:tp,st:tst,esp:Math.floor(rnd()*40)})}
+ for(var i=0;i<120;i++){var r=rnd(),st=r<.3?'Concretizado':r<.45?'CR Cliente':r<.85?'Analise Banco':r<.95?'Pendente':'Cancelado';
+  var pi=Math.floor(Math.pow(rnd(),1.3)*PR.length),pdw=rnd(),pd=pdw<.34?0:pdw<.55?2:pdw<.72?1:pdw<.9?3:4;
+  var vb=Math.round((1500+rnd()*rnd()*50000)/100)*100;
+  C.push({id:1001+i,cli:NM[Math.floor(rnd()*NM.length)]+' '+SN[Math.floor(rnd()*SN.length)],p:pi,pd:PD[pd],cv:CV[Math.floor(rnd()*4)],bk:BK[Math.floor(rnd()*3)],
+   v:vb,vl:Math.round(vb*(0.85+rnd()*0.1)),pz:[48,72,84,96][Math.floor(rnd()*4)],st:st,d:Math.floor(rnd()*45),mot:st==='Pendente'?MOT[Math.floor(rnd()*4)]:'',
+   fis:FISICO_OPT[Math.floor(rnd()*FISICO_OPT.length)],cst:COMST_OPT[Math.floor(rnd()*COMST_OPT.length)]})}
+}
+/* T (fila de atendimento) segue em demonstração mesmo com Supabase ativo — é a próxima etapa a migrar */
+var S={v:'dash',per:30,q:'',fs:'',pm:'',t:'',role:'Admin',real:'',me:0,gestorProm:0,af:''};
+function minhaPromotoraIdx(){return S.role==='Gestor'?S.gestorProm:PRM[S.me]}
+function meuEscopo(p){return S.role==='Admin'||(S.role==='Gestor'?PRM[p]===S.gestorProm:p===S.me)}
+function today(d){var x=new Date();x.setDate(x.getDate()-d);return x}
+function fd(d){return today(d).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})}
+function pmn(c){return PM[PRM[c.p]]}
+function base(){return C.filter(function(c){return (!S.pm||PRM[c.p]==S.pm)&&meuEscopo(c.p)})}
+function pmSel(){if(S.role!=='Admin')return '<span class="mu" style="align-self:center">'+esc(PM[minhaPromotoraIdx()])+(S.role==='Gestor'?'':' · '+esc(PR[S.me]))+'</span>';return '<select onchange="S.pm=this.value;go(S.v)" aria-label="Promotora"><option value="">Todas as promotoras</option>'+PM.map(function(n,i){return '<option value="'+i+'"'+(S.pm===String(i)?' selected':'')+'>'+esc(n)+'</option>'}).join('')+'</select>'}
+function prod(){return base().filter(function(c){return PRODST.indexOf(c.st)>-1&&c.d<S.per})}
+function sum(a){return a.reduce(function(s,c){return s+c.v},0)}
+function group(a,key){var m={};a.forEach(function(c){var k=typeof key==='function'?key(c):c[key];(m[k]=m[k]||[]).push(c)});return Object.keys(m).map(function(k){return{k:k,list:m[k],t:sum(m[k])}}).sort(function(a,b){return b.t-a.t})}
+function comm(c){return c.v*(COM[c.pd]||0)/100}
+function perSel(){return pmSel()+'<select onchange="S.per=+this.value;go(S.v)" aria-label="Período"><option value="7"'+(S.per==7?' selected':'')+'>Últimos 7 dias</option><option value="30"'+(S.per==30?' selected':'')+'>Últimos 30 dias</option><option value="999"'+(S.per==999?' selected':'')+'>Todo o período</option></select>'}
+function head(t,s,extra){return '<div class="top"><div><h1>'+t+'</h1><p class="sub">'+s+'</p></div><div class="tools">'+(extra||'')+'</div></div>'}
+function rank(list,max,fmt,medal){return list.map(function(g,i){return '<div class="rk"><span class="pos '+(i==0?'p1':'')+'">'+(i+1)+'</span><div><b>'+g.k+'</b><div class="mu">'+(fmt?fmt(g.k)+' · ':'')+g.list.length+' contratos · ticket '+brl(g.t/g.list.length)+'</div></div><b>'+brl(g.t)+'</b><div class="bar '+(medal?'m':'')+'"><i style="width:'+Math.max(2,g.t/max*100)+'%"></i></div></div>'}).join('')}
+
+var V={
+dash:function(){var p=prod(),all=base().filter(function(c){return c.d<S.per}),ok=all.filter(function(c){return PRODST.indexOf(c.st)>-1}).length;
+ var days=[];for(var d=13;d>=0;d--){days.push({d:d,t:sum(base().filter(function(c){return c.d===d&&PRODST.indexOf(c.st)>-1}))})}var mx=Math.max.apply(null,days.map(function(x){return x.t}))||1;
+ var fun=ST.map(function(s){return{k:s,list:all.filter(function(c){return c.st===s}),t:0}});fun.forEach(function(f){f.t=f.list.length});
+ var mxf=Math.max.apply(null,fun.map(function(f){return f.t}))||1;
+ return head('Dashboard','Visão geral da carteira da financeira',perSel())+
+ '<div class="grid k5"><div class="card kpi hl"><small>Produção (concretizado + CR cliente)</small><b>'+brl(sum(p))+'</b></div><div class="card kpi"><small>Contratos produzidos</small><b>'+p.length+'</b></div><div class="card kpi"><small>Ticket médio</small><b>'+brl(p.length?sum(p)/p.length:0)+'</b></div><div class="card kpi"><small>Taxa de aprovação</small><b>'+(all.length?Math.round(ok/all.length*100):0)+'%</b></div><div class="card kpi"><small>Comissão a receber</small><b>'+brl(p.reduce(function(s,c){return s+comm(c)},0))+'</b></div></div>'+
+ '<div class="grid two" style="margin-top:14px"><div class="card"><h2>Produção diária (últimos 14 dias)</h2><div class="cols">'+days.map(function(x){return '<div style="height:'+(x.t/mx*100)+'%" title="'+fd(x.d)+': '+brl(x.t)+'"></div>'}).join('')+'</div><div class="lab">'+days.map(function(x){return '<span>'+fd(x.d).slice(0,2)+'</span>'}).join('')+'</div></div>'+
+ '<div class="card"><h2>Funil da esteira</h2>'+fun.map(function(f){return '<div class="rk" style="grid-template-columns:100px 1fr auto"><span>'+f.k+'</span><div class="bar" style="grid-column:auto"><i style="width:'+f.t/mxf*100+'%"></i></div><b>'+f.t+'</b></div>'}).join('')+'</div></div>'+
+ '<div class="grid two" style="margin-top:14px"><div class="card"><h2>Top 3 vendedores</h2>'+rank(group(p,function(c){return PR[c.p]}).slice(0,3),Math.max(1,group(p,function(c){return PR[c.p]})[0]?group(p,function(c){return PR[c.p]})[0].t:1),0,1)+'</div><div class="card"><h2>Top 3 produtos</h2>'+rank(group(p,'pd').slice(0,3),group(p,'pd')[0]?group(p,'pd')[0].t:1)+'</div></div>'},
+est:function(){return head('Esteira de contratos','Acompanhe cada proposta do cadastro ao pagamento',pmSel()+'<button class="btn s" onclick="expEsteira()">Exportar Excel</button><button class="btn s" onclick="document.getElementById(\'impFile\').click()">Importar Excel</button><button class="btn g" onclick="openNew()">Novo contrato</button>')+
+ '<div class="tools" style="margin-bottom:12px"><input id="q" placeholder="Buscar cliente ou nº" oninput="S.q=this.value;tb()" value="'+S.q+'" aria-label="Buscar"><select onchange="S.fs=this.value;tb()" aria-label="Status"><option value="">Todos os status</option>'+ST.map(function(s){return '<option'+(S.fs===s?' selected':'')+'>'+s+'</option>'}).join('')+'</select></div><div class="card tw"><table><thead><tr><th>Nº</th><th>Data</th><th>Cliente</th><th>Promotora</th><th>Vendedor</th><th>Produto</th><th>Convênio</th><th>Banco</th><th>Bruto</th><th>Status</th><th>Físico</th><th>Comissão</th></tr></thead><tbody id="tb"></tbody></table></div>'},
+pend:function(){var l=base().filter(function(c){return c.st==='Pendente'});return head('Pendências','Contratos parados por falta de documento ou ajuste',pmSel()+'<button class="btn s" onclick="expPend()">Exportar Excel</button>')+'<div class="card tw">'+(l.length?'<table><thead><tr><th>Nº</th><th>Cliente</th><th>Promotora</th><th>Vendedor</th><th>Valor</th><th>Motivo</th><th></th></tr></thead><tbody>'+l.map(function(c){return '<tr><td>'+c.id+'</td><td>'+esc(c.cli)+'</td><td>'+pmn(c)+'</td><td>'+PR[c.p]+'</td><td>'+brl(c.v)+'</td><td>'+esc(c.mot)+'</td><td><button class="btn s g" onclick="setSt('+c.id+',\'Analise Banco\',1)">Marcar como resolvida</button></td></tr>'}).join('')+'</tbody></table>':'<p class="mu">Nenhuma pendência aberta. Bom trabalho!</p>')+'</div>'},
+rkp:function(){var pmp=C.filter(function(c){return PRODST.indexOf(c.st)>-1&&c.d<S.per}),gp=group(pmp,function(c){return pmn(c)});
+ PM.forEach(function(n){if(!gp.some(function(x){return x.k===n}))gp.push({k:n,list:[],t:0})});
+ var g=group(prod(),function(c){return PR[c.p]}).filter(function(x){return !S.t||PRT[PR.indexOf(x.k)]===S.t});
+ PR.forEach(function(n,i){if((!S.pm||PRM[i]==S.pm)&&(!S.t||PRT[i]===S.t)&&!g.some(function(x){return x.k===n}))g.push({k:n,list:[],t:0})});
+ var tsel='<select onchange="S.t=this.value;go(\'rkp\')" aria-label="Tipo de vendedor"><option value="">Corretores e colaboradores</option><option value="Corretor"'+(S.t==='Corretor'?' selected':'')+'>Corretores</option><option value="Colaborador"'+(S.t==='Colaborador'?' selected':'')+'>Colaboradores</option></select>';
+ var sub=function(n){var i=PR.indexOf(n);return PRT[i]+' · '+PM[PRM[i]]};
+ return head('Ranking de vendas','Da promotora ao vendedor que fechou o contrato',perSel()+tsel+'<button class="btn s" onclick="expRkp()">Exportar Excel</button>')+
+ '<div class="grid two"><div class="card"><h2>Ranking de promotoras</h2>'+rank(gp,gp[0].t||1,0,1)+'</div><div class="card"><h2>Ranking de vendedores</h2>'+rank(g,(g[0]||{t:1}).t||1,sub)+'</div></div>'+
+ '<div class="card" style="margin-top:14px"><h2>Meta mensal por vendedor ('+brl(META)+')</h2><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(230px,1fr))">'+g.map(function(x){var m=sum(C.filter(function(c){return PR[c.p]===x.k&&c.d<30&&PRODST.indexOf(c.st)>-1})),pc=Math.round(m/META*100);return '<div class="rk" style="grid-template-columns:1fr auto"><span>'+x.k+'</span><b>'+pc+'%</b><div class="bar m" style="grid-column:1/3"><i style="width:'+Math.min(100,pc)+'%"></i></div></div>'}).join('')+'</div></div>'},
+rkd:function(){var p=prod();return head('Ranking de produtos','Análise do que mais vende, por produto, convênio e banco',perSel()+'<button class="btn s" onclick="expRkd()">Exportar Excel</button>')+'<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))"><div class="card"><h2>Produtos mais vendidos</h2>'+rank(group(p,'pd'),(group(p,'pd')[0]||{t:1}).t)+'</div><div class="card"><h2>Por convênio</h2>'+rank(group(p,'cv'),(group(p,'cv')[0]||{t:1}).t)+'</div><div class="card"><h2>Por banco</h2>'+rank(group(p,'bk'),(group(p,'bk')[0]||{t:1}).t,0,1)+'</div></div>'},
+com:function(){var p=prod(),gp=group(p,function(c){return pmn(c)}),gs=group(p,function(c){return PR[c.p]});
+ var cs=function(c){return comm(c)*RP[PRT[c.p]]/100},add=function(l,f){return l.reduce(function(s,c){return s+f(c)},0)};
+ var tot=add(p,comm),rep=add(p,cs);
+ return head('Comissões','A financeira paga a promotora e a promotora repassa aos vendedores',perSel()+'<button class="btn s" onclick="expCom()">Exportar Excel</button>')+
+ '<div class="grid k5"><div class="card kpi hl"><small>Comissão paga às promotoras</small><b>'+brl(tot)+'</b></div><div class="card kpi"><small>Repasse aos vendedores</small><b>'+brl(rep)+'</b></div><div class="card kpi"><small>Retido pelas promotoras</small><b>'+brl(tot-rep)+'</b></div></div>'+
+ '<div class="grid two" style="margin-top:14px"><div class="card"><h2>Tabela da financeira (% sobre o valor)</h2><table>'+PD.map(function(n){return '<tr><td>'+n+'</td><td style="width:110px"><input type="number" step="0.1" min="0" max="20" value="'+COM[n]+'" onchange="COM[\''+n+'\']=+this.value;go(\'com\')" aria-label="Comissão '+n+'" style="width:100%"></td></tr>'}).join('')+'</table><h2 style="margin-top:18px">Repasse ao vendedor (% da comissão)</h2><table>'+['Corretor','Colaborador'].map(function(t){return '<tr><td>'+t+'</td><td style="width:110px"><input type="number" min="0" max="100" value="'+RP[t]+'" onchange="RP[\''+t+'\']=+this.value;go(\'com\')" aria-label="Repasse '+t+'" style="width:100%"></td></tr>'}).join('')+'</table></div>'+
+ '<div class="card tw"><h2>Por promotora</h2><table><thead><tr><th>Promotora</th><th>Produção</th><th>Comissão</th><th>Repasse</th><th>Retido</th></tr></thead><tbody>'+gp.map(function(x){var c1=add(x.list,comm),r1=add(x.list,cs);return '<tr><td>'+x.k+'</td><td>'+brl(x.t)+'</td><td><b>'+brl(c1)+'</b></td><td>'+brl(r1)+'</td><td>'+brl(c1-r1)+'</td></tr>'}).join('')+'</tbody></table></div></div>'+
+ '<div class="card tw" style="margin-top:14px"><h2>A pagar por vendedor</h2><table><thead><tr><th>Vendedor</th><th>Tipo</th><th>Promotora</th><th>Produção</th><th>Comissão</th></tr></thead><tbody>'+gs.map(function(x){var i=PR.indexOf(x.k);return '<tr><td>'+x.k+'</td><td>'+PRT[i]+'</td><td>'+PM[PRM[i]]+'</td><td>'+brl(x.t)+'</td><td><b>'+brl(add(x.list,cs))+'</b></td></tr>'}).join('')+'</tbody></table></div>'},
+atend:function(){
+ var list=T.filter(function(t){return(!S.af||t.st===S.af)&&meuEscopo(t.p)});
+ var stats=['Aguardando','Em atendimento','Resolvido'].map(function(s){return{k:s,n:T.filter(function(t){return t.st===s&&meuEscopo(t.p)}).length}});
+ var fsel='<select onchange="S.af=this.value;go(\'atend\')" aria-label="Status">'+['','Aguardando','Em atendimento','Resolvido'].map(function(s){return '<option'+(S.af===s?' selected':'')+'>'+(s||'Todos os status')+'</option>'}).join('')+'</select>';
+ var integ=S.role==='Admin'?'<div class="card" style="margin-top:14px"><h2>Integração de agente de IA</h2><p class="mu" style="margin-top:-6px">Conecte o Hermes Agente e informe a chave da API DeepSeek para o atendimento automático.</p><label for="hz">Webhook do Hermes Agente</label><input id="hz" placeholder="https://hermes.suaempresa.com/webhook" value="'+esc(INTEG.hermes)+'"><label for="dk">Chave da API DeepSeek</label><input id="dk" type="password" placeholder="sk-..." value="'+esc(INTEG.deepseek)+'"><button class="btn g" style="margin-top:12px" onclick="saveInteg()">Salvar integração</button></div>':'';
+ return head('Fila de atendimento','Dúvidas e solicitações dos clientes, atendidas por humano ou pelo agente de IA',fsel)+
+ '<div class="grid k5">'+stats.map(function(s){return '<div class="card kpi"><small>'+s.k+'</small><b>'+s.n+'</b></div>'}).join('')+'</div>'+
+ '<div class="card tw" style="margin-top:14px"><table><thead><tr><th>Nº</th><th>Cliente</th><th>Canal</th><th>Assunto</th><th>Atendente</th><th>Espera</th><th>Status</th><th></th></tr></thead><tbody>'+
+ (list.length?list.map(function(t){return '<tr><td>'+t.id+'</td><td>'+t.cli+'</td><td>'+t.canal+'</td><td>'+t.ass+'</td><td>'+(t.ia?'<span class="st Aprovado">Hermes IA</span>':PR[t.p])+'</td><td>'+t.esp+' min</td><td><span class="st '+t.st.replace(' ','')+'">'+t.st+'</span></td><td>'+(t.st==='Aguardando'?'<button class="btn s g" onclick="assume('+t.id+')">Assumir</button>':t.st==='Em atendimento'?'<button class="btn s" onclick="resolveT('+t.id+')">Concluir</button>':'')+'</td></tr>'}).join(''):'<tr><td colspan="8" class="mu">Nenhum atendimento na fila.</td></tr>')+
+ '</tbody></table></div>'+integ},
+rel:function(){var p=prod();
+ return head('Relatórios','Exporte a produção do período em Excel para auditoria externa ou contabilidade',perSel())+
+ '<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">'+
+ '<div class="card"><h2>Por promotora</h2>'+rank(group(p,function(c){return pmn(c)}),(group(p,function(c){return pmn(c)})[0]||{t:1}).t,0,1)+'<button class="btn s" style="margin-top:10px" onclick="expRel(\'prom\')">Exportar Excel</button></div>'+
+ '<div class="card"><h2>Por produto</h2>'+rank(group(p,'pd'),(group(p,'pd')[0]||{t:1}).t)+'<button class="btn s" style="margin-top:10px" onclick="expRel(\'prod\')">Exportar Excel</button></div>'+
+ '<div class="card"><h2>Por vendedor</h2>'+rank(group(p,function(c){return PR[c.p]}),(group(p,function(c){return PR[c.p]})[0]||{t:1}).t)+'<button class="btn s" style="margin-top:10px" onclick="expRel(\'vend\')">Exportar Excel</button></div>'+
+ '</div>'},
+aud:function(){return head('Auditoria','Histórico de ações realizadas no sistema, por usuário','<button class="btn s" onclick="expAud()">Exportar Excel</button>')+
+ '<div class="card tw"><table><thead><tr><th>Data/Hora</th><th>Usuário</th><th>Ação</th><th>Detalhe</th></tr></thead><tbody>'+
+ (AUD.length?AUD.slice(0,80).map(function(a){return '<tr><td>'+a.t.toLocaleString('pt-BR')+'</td><td>'+esc(a.u)+'</td><td>'+esc(a.a)+'</td><td>'+esc(a.d)+'</td></tr>'}).join(''):'<tr><td colspan="4" class="mu">Nenhum evento registrado ainda. Interaja com o sistema para gerar o log.</td></tr>')+
+ '</tbody></table></div>'},
+perm:function(){var mods=NAV.filter(function(x){return x[0]!=='dash'});
+ return head('Permissões','Defina quais módulos cada perfil pode acessar. O Admin sempre vê tudo.')+
+ '<div class="card tw"><table><thead><tr><th>Módulo</th><th>Corretor</th><th>Colaborador</th></tr></thead><tbody>'+
+ mods.map(function(m){return '<tr><td>'+m[1]+'</td><td><input type="checkbox" '+(PERM.Corretor.indexOf(m[0])>-1?'checked':'')+' onchange="togglePerm(\'Corretor\',\''+m[0]+'\',this.checked)"></td><td><input type="checkbox" '+(PERM.Colaborador.indexOf(m[0])>-1?'checked':'')+' onchange="togglePerm(\'Colaborador\',\''+m[0]+'\',this.checked)"></td></tr>'}).join('')+
+ '</tbody></table></div>'},
+planos:function(){var mrr=PM.reduce(function(s,n,i){return s+(PLANO[i]==='ia'?300:200)},0),ia=PM.filter(function(n,i){return PLANO[i]==='ia'}).length;
+ return head('Planos e faturamento','Mensalidade da plataforma cobrada de cada promotora cliente')+
+ '<div class="grid k5"><div class="card kpi hl"><small>MRR total</small><b>'+brl(mrr)+'</b></div><div class="card kpi"><small>Promotoras com agente de IA</small><b>'+ia+'</b></div><div class="card kpi"><small>Promotoras só sistema</small><b>'+(PM.length-ia)+'</b></div></div>'+
+ '<div class="grid two" style="margin-top:14px"><div class="card"><h2>Planos disponíveis</h2><div class="rk" style="grid-template-columns:1fr auto"><span>Sistema</span><b>'+brl(200)+'/mês</b></div><div class="rk" style="grid-template-columns:1fr auto"><span>Sistema + Agente de IA (Hermes)</span><b>'+brl(300)+'/mês</b></div></div>'+
+ '<div class="card tw"><h2>Plano por promotora</h2><table><thead><tr><th>Promotora</th><th>Plano</th><th>Mensalidade</th></tr></thead><tbody>'+PM.map(function(n,i){return '<tr><td>'+esc(n)+'</td><td><select onchange="PLANO['+i+']=this.value;go(\'planos\')" aria-label="Plano '+n+'"><option value="basic"'+(PLANO[i]==='basic'?' selected':'')+'>Sistema</option><option value="ia"'+(PLANO[i]==='ia'?' selected':'')+'>Sistema + Agente IA</option></select></td><td><b>'+brl(PLANO[i]==='ia'?300:200)+'</b></td></tr>'}).join('')+'</tbody></table></div></div>'}
+};
+function go(v){if(CUR&&PERM[S.role].indexOf(v)===-1)v='dash';S.v=v;$('#main').innerHTML=V[v]();document.querySelectorAll('#navBtns button').forEach(function(b){b.classList.toggle('on',b.dataset.v===v)});if(v==='est')tb()}
+function setRole(r){S.role=r;
+ if(r==='Gestor')S.gestorProm=0;
+ else{var allowed=PR.map(function(n,i){return PRT[i]===r?i:-1}).filter(function(i){return i>-1});S.me=r==='Admin'?0:(allowed[0]!==undefined?allowed[0]:0)}
+ if(PERM[S.role].indexOf(S.v)===-1)S.v='dash';renderNav();go(S.v)}
+function renderNav(){var b=PERM[S.role];var nf=document.getElementById('navFoot');if(nf)nf.textContent=sb?'':'Modo de demonstração · dados de teste';
+ var card='<div class="ucard"><b>'+esc(CUR?CUR.name:'')+'</b><span>'+esc(S.real)+(CUR?' · '+esc(CUR.email):'')+'</span><button class="navout" onclick="logout()">Sair</button></div>';
+ var sim=S.role==='Gestor'?'<select class="navsel" onchange="S.gestorProm=+this.value;go(S.v)" aria-label="Promotora">'+PM.map(function(n,i){return '<option value="'+i+'"'+(S.gestorProm===i?' selected':'')+'>'+esc(n)+'</option>'}).join('')+'</select>':(S.role!=='Admin'?'<select class="navsel" onchange="S.me=+this.value;go(S.v)" aria-label="Vendedor">'+PR.map(function(n,i){return PRT[i]===S.role?'<option value="'+i+'"'+(S.me===i?' selected':'')+'>'+esc(n)+'</option>':''}).join('')+'</select>':'');
+ var va=S.real==='Admin'?'<div class="vl">Visualizar como</div><select class="navsel" onchange="setRole(this.value)" aria-label="Visualizar como">'+['Admin','Gestor','Corretor','Colaborador'].map(function(r){return '<option'+(S.role===r?' selected':'')+'>'+r+'</option>'}).join('')+'</select>'+sim:'';
+ $('#roleBox').innerHTML=card+va;
+ $('#navBtns').innerHTML=NAV.filter(function(x){return b.indexOf(x[0])>-1}).map(function(x){return '<button data-v="'+x[0]+'">'+x[1]+'</button>'}).join('');
+ document.querySelectorAll('#navBtns button').forEach(function(bt){bt.addEventListener('click',function(){go(bt.dataset.v)});bt.classList.toggle('on',bt.dataset.v===S.v)})}
+function assume(id){var t=T.filter(function(x){return x.id===id})[0];t.st='Em atendimento';if(S.role==='Corretor'||S.role==='Colaborador')t.p=S.me;alog('Atendimento assumido','Ticket '+id+' - '+t.cli);toast('Atendimento assumido');go('atend')}
+function resolveT(id){var t=T.filter(function(x){return x.id===id})[0];t.st='Resolvido';alog('Atendimento concluído','Ticket '+id+' - '+t.cli);toast('Atendimento concluído');go('atend')}
+function saveInteg(){INTEG.hermes=$('#hz').value.trim();INTEG.deepseek=$('#dk').value.trim();alog('Integração atualizada','Hermes Agente / DeepSeek');toast('Integração salva');go('atend')}
+function togglePerm(role,mod,on){var i=PERM[role].indexOf(mod);if(on&&i===-1)PERM[role].push(mod);if(!on&&i>-1)PERM[role].splice(i,1);alog('Permissão alterada',role+' · '+mod+' → '+(on?'liberado':'bloqueado'));toast('Permissões atualizadas')}
+function exportXLSX(filename,sheetName,rows){
+ if(!window.XLSX){toast('Biblioteca de Excel não carregou (verifique sua internet)');return}
+ try{var ws=XLSX.utils.aoa_to_sheet(rows);var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,sheetName||'Dados');XLSX.writeFile(wb,filename);toast('Exportado: '+filename)}
+ catch(e){toast('Erro ao exportar: '+e.message)}}
+function expRel(kind){var p=prod(),rows,name;
+ if(kind==='prom'){rows=[['Promotora','Contratos','Total']].concat(group(p,function(c){return pmn(c)}).map(function(g){return[g.k,g.list.length,g.t]}));name='producao_promotoras.xlsx'}
+ else if(kind==='prod'){rows=[['Produto','Contratos','Total']].concat(group(p,'pd').map(function(g){return[g.k,g.list.length,g.t]}));name='producao_produtos.xlsx'}
+ else{rows=[['Vendedor','Tipo','Promotora','Contratos','Total']].concat(group(p,function(c){return PR[c.p]}).map(function(g){var i=PR.indexOf(g.k);return[g.k,PRT[i],PM[PRM[i]],g.list.length,g.t]}));name='producao_vendedores.xlsx'}
+ exportXLSX(name,'Relatorio',rows)}
+function expEsteira(){var q=S.q.toLowerCase();
+ var l=base().filter(function(c){return(!S.fs||c.st===S.fs)&&(!q||c.cli.toLowerCase().indexOf(q)>-1||String(c.id).indexOf(q)>-1)}).sort(function(a,b){return a.d-b.d||b.id-a.id});
+ var rows=[['Nº','Data','Cliente','CPF','Nascimento','Telefone','Promotora','Vendedor','Produto','Convênio','Tabela','Banco','Matrícula','Bruto','Líquido','Parcelas','Status','Físico','Comissão','Averbação','Motivo','Observações']].concat(l.map(function(c){return[c.id,fd(c.d),c.cli,c.cpf||'',c.nasc||'',c.tel||'',pmn(c),PR[c.p],c.pd,c.cv,c.tab||'',c.bk,c.mat||'',c.v,c.vl||'',c.pz,c.st,c.fis||'',c.cst||'',c.aver||'',c.mot||'',c.obs||'']}));
+ exportXLSX('esteira_contratos.xlsx','Contratos',rows)}
+function expPend(){var l=base().filter(function(c){return c.st==='Pendente'});
+ var rows=[['Nº','Cliente','Promotora','Vendedor','Valor','Motivo']].concat(l.map(function(c){return[c.id,c.cli,pmn(c),PR[c.p],c.v,c.mot]}));
+ exportXLSX('pendencias.xlsx','Pendências',rows)}
+function expRkp(){var pmp=C.filter(function(c){return PRODST.indexOf(c.st)>-1&&c.d<S.per}),gp=group(pmp,function(c){return pmn(c)}),g=group(prod(),function(c){return PR[c.p]});
+ var rows=[['Tipo','Nome','Contratos','Total']].concat(gp.map(function(x){return['Promotora',x.k,x.list.length,x.t]})).concat(g.map(function(x){return['Vendedor',x.k,x.list.length,x.t]}));
+ exportXLSX('ranking_vendas.xlsx','Ranking',rows)}
+function expRkd(){var p=prod();
+ var rows=[['Categoria','Nome','Contratos','Total']].concat(group(p,'pd').map(function(g){return['Produto',g.k,g.list.length,g.t]})).concat(group(p,'cv').map(function(g){return['Convênio',g.k,g.list.length,g.t]})).concat(group(p,'bk').map(function(g){return['Banco',g.k,g.list.length,g.t]}));
+ exportXLSX('ranking_produtos.xlsx','Ranking',rows)}
+function expCom(){var p=prod(),gs=group(p,function(c){return PR[c.p]}),cs=function(c){return comm(c)*RP[PRT[c.p]]/100};
+ var rows=[['Vendedor','Tipo','Promotora','Produção','Comissão']].concat(gs.map(function(x){var i=PR.indexOf(x.k);return[x.k,PRT[i],PM[PRM[i]],x.t,x.list.reduce(function(s,c){return s+cs(c)},0)]}));
+ exportXLSX('comissoes.xlsx','Comissões',rows)}
+function expAud(){var rows=[['Data/Hora','Usuário','Ação','Detalhe']].concat(AUD.map(function(a){return[a.t.toLocaleString('pt-BR'),a.u,a.a,a.d]}));
+ exportXLSX('auditoria.xlsx','Auditoria',rows)}
+/* ===== Importação de contratos via Excel ===== */
+function normH(s){return String(s==null?'':s).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
+function detectarLinhaCabecalho(ws){
+ var alvo=['banco','cliente','cpf','valor','bruto','liquido','parcelas','prazo','status','situacao','vendedor','agente','produto','tipo','convenio','n','no','data','operacao','promotora'].map(normH);
+ var raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+ var melhorIdx=0,melhorScore=-1;
+ for(var i=0;i<Math.min(raw.length,10);i++){
+  var score=(raw[i]||[]).filter(function(v){return alvo.indexOf(normH(v))>-1}).length;
+  if(score>melhorScore){melhorScore=score;melhorIdx=i}}
+ return melhorIdx}
+function importarExcel(input){var file=input.files[0];if(!file)return;
+ var reader=new FileReader();
+ reader.onload=function(e){try{
+   var wb=XLSX.read(e.target.result,{type:'array'});
+   var ws=wb.Sheets[wb.SheetNames[0]];
+   var linhaCab=detectarLinhaCabecalho(ws);
+   var rows=XLSX.utils.sheet_to_json(ws,{range:linhaCab,defval:''});
+   processarImportacao(rows);
+  }catch(err){toast('Erro ao ler o arquivo: '+err.message)}
+  input.value=''};
+ reader.readAsArrayBuffer(file)}
+function validarCPF(cpf){cpf=String(cpf||'').replace(/\D/g,'');
+ if(cpf.length!==11||/^(\d)\1{10}$/.test(cpf))return false;
+ var soma=0,i,d1,d2;
+ for(i=0;i<9;i++)soma+=+cpf[i]*(10-i);d1=(soma*10)%11;if(d1===10)d1=0;if(d1!==+cpf[9])return false;
+ soma=0;for(i=0;i<10;i++)soma+=+cpf[i]*(11-i);d2=(soma*10)%11;if(d2===10)d2=0;return d2===+cpf[10]}
+function parseDataBR(s){s=String(s||'').trim();if(!s)return null;
+ var m=s.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?$/);if(!m)return null;
+ var d=+m[1],mo=+m[2],y=m[3]?(+m[3]<100?2000+ +m[3]:+m[3]):new Date().getFullYear();
+ var dt=new Date(y,mo-1,d);if(isNaN(dt.getTime()))return null;
+ var pad=function(n){return(n<10?'0':'')+n};
+ return{iso:dt.toISOString(),dataPura:y+'-'+pad(mo)+'-'+pad(d),dias:Math.max(0,Math.floor((Date.now()-dt.getTime())/86400000))}}
+function norm(s){return String(s==null?'':s).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
+function numBR(v){if(typeof v==='number')return v;
+ var s=String(v==null?'':v).trim();if(!s)return NaN;
+ if(/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(s)||/^-?\d+,\d+$/.test(s))s=s.replace(/\./g,'').replace(',','.');
+ return parseFloat(s)}
+function col(r,nomes){for(var i=0;i<nomes.length;i++){var alvo=norm(nomes[i]);for(var k in r){if(norm(k)===alvo&&r[k]!=='')return r[k]}}return ''}
+function matchOpt(lista,val){var v=norm(val);for(var i=0;i<lista.length;i++){if(norm(lista[i])===v)return lista[i]}return null}
+function processarImportacao(rows){
+ if(!rows.length){toast('Planilha vazia ou em formato não reconhecido');return}
+ var ok=0,atualizados=0,erro=0,erros=[];
+ rows.forEach(function(r,idx){
+  var linha=idx+2;
+  var cli=String(col(r,['Cliente'])).trim(),v=numBR(col(r,['Bruto','Valor'])),pz=numBR(col(r,['Parcelas','Prazo']));
+  if(cli.length<3){erro++;erros.push('L'+linha+': Cliente inválido');return}
+  if(!(v>=500)){erro++;erros.push('L'+linha+': Bruto inválido');return}
+  if(!(pz>=1)){erro++;erros.push('L'+linha+': Parcelas inválido');return}
+  var vlRaw=col(r,['Líquido']),vl=vlRaw?numBR(vlRaw):null;
+  var temTipo=col(r,['Tipo'])!=='';
+  var pd=String(temTipo?col(r,['Tipo']):(col(r,['Produto'])||PD[0])).trim();
+  var tab=String(col(r,['Tabela'])||(temTipo?col(r,['Produto']):'')).trim();
+  var cv=String(col(r,['Convênio'])||CV[0]).trim(),bk=String(col(r,['Banco'])||BK[0]).trim();
+  var st=matchOpt(ST,col(r,['Status','Situação']))||'Analise Banco';
+  var fis=matchOpt(FISICO_OPT,col(r,['Físico']))||'-';
+  var cst=matchOpt(COMST_OPT,col(r,['Comissão']))||'AG. CR Cliente';
+  var cpf=String(col(r,['CPF'])).trim();
+  if(cpf&&!validarCPF(cpf)){erro++;erros.push('L'+linha+': CPF inválido');return}
+  var nascE=parseDataBR(col(r,['Nascimento'])),aversE=parseDataBR(col(r,['Averbação']));
+  var tel=String(col(r,['Telefone'])).trim(),mat=String(col(r,['Matrícula'])).trim(),mot=String(col(r,['Motivo'])).trim(),obs=String(col(r,['Observações'])).trim();
+  var vendNome=String(col(r,['Vendedor','Agente'])).trim(),promNome=String(col(r,['Promotora'])).trim();
+  var vi=vendNome?PR.findIndex(function(n){return norm(n)===norm(vendNome)}):-1;
+  if(vendNome&&vi<0){erro++;erros.push('L'+linha+': vendedor "'+vendNome+'" não encontrado');return}
+  if(vi>-1&&promNome&&PM[PRM[vi]]&&norm(PM[PRM[vi]])!==norm(promNome)){
+   erro++;erros.push('L'+linha+': "'+vendNome+'" não é da promotora "'+promNome+'"');return}
+  if(vi<0){
+   if(S.role==='Corretor'||S.role==='Colaborador')vi=S.me;
+   else if(S.role==='Gestor'&&CUR&&CUR.id&&PRUID.indexOf(CUR.id)>-1)vi=PRUID.indexOf(CUR.id);
+   else{erro++;erros.push('L'+linha+': informe a coluna Vendedor');return}}
+  var dt=parseDataBR(col(r,['Data','Operação']));
+  var numExistente=+col(r,['Nº','No','N']);
+  var existente=numExistente?C.filter(function(c){return c.id===numExistente})[0]:null;
+
+  var camposLocais={cli:cli,p:vi,pd:pd,cv:cv,bk:bk,v:v,vl:vl,pz:pz,st:st,fis:fis,cst:cst,cpf:cpf,nasc:nascE?nascE.dataPura:'',tel:tel,mat:mat,aver:aversE?aversE.dataPura:'',mot:st==='Pendente'?mot:'',obs:obs,tab:tab};
+  if(existente){
+   var patch={cliente:cli,produto:pd,convenio:cv,banco:bk,valor:v,valor_liquido:vl,parcelas:pz,status:st,fisico:fis,status_comissao:cst,
+    cpf:cpf||null,telefone:tel||null,matricula:mat||null,data_nascimento:nascE?nascE.dataPura:null,data_averbacao:aversE?aversE.dataPura:null,
+    motivo_pendencia:st==='Pendente'?(mot||null):null,observacoes:obs||null,tabela:tab||null};
+   if(sb){sb.from('contratos').update(patch).eq('id',existente.id).then(function(res){
+     if(!res.error){Object.assign(existente,camposLocais);if(S.v==='est')tb()}
+     else erros.push('L'+linha+': '+res.error.message)})}
+   else Object.assign(existente,camposLocais);
+   atualizados++;return}
+
+  if(sb){var payload={cliente:cli,vendedor_id:PRUID[vi],produto:pd,convenio:cv,banco:bk,valor:v,valor_liquido:vl,parcelas:pz,status:st,fisico:fis,status_comissao:cst,
+    cpf:cpf||null,telefone:tel||null,matricula:mat||null,data_nascimento:nascE?nascE.dataPura:null,data_averbacao:aversE?aversE.dataPura:null,
+    motivo_pendencia:st==='Pendente'?(mot||null):null,observacoes:obs||null,tabela:tab||null};
+   if(dt)payload.criado_em=dt.iso;
+   sb.from('contratos').insert(payload).select().single().then(function(res){
+    if(!res.error){C.unshift(Object.assign({id:res.data.id,d:dt?dt.dias:0},camposLocais));if(S.v==='est')tb()}})
+  }else{var nid=Math.max.apply(null,C.map(function(c){return c.id}).concat([0]))+1;
+   C.push(Object.assign({id:nid,d:dt?dt.dias:0},camposLocais))}
+  ok++});
+ var resumo=ok+' novo(s), '+atualizados+' atualizado(s)'+(erro?(', '+erro+' com erro'):'');
+ alog('Importação de planilha',resumo+(erros.length?(' — '+erros.slice(0,5).join(' | ')):''));
+ toast(resumo);
+ go('est')}
+function tb(){var q=S.q.toLowerCase(),l=base().filter(function(c){return(!S.fs||c.st===S.fs)&&(!q||c.cli.toLowerCase().indexOf(q)>-1||String(c.id).indexOf(q)>-1)}).sort(function(a,b){return a.d-b.d||b.id-a.id}).slice(0,40);
+ $('#tb').innerHTML=l.length?l.map(function(c){return '<tr><td>'+c.id+'</td><td>'+fd(c.d)+'</td><td>'+esc(c.cli)+'</td><td>'+pmn(c)+'</td><td>'+PR[c.p]+' <span class="mu">('+PRT[c.p]+')</span></td><td>'+c.pd+'</td><td>'+c.cv+'</td><td>'+c.bk+'</td><td>'+brl(c.v)+'</td><td><select class="st '+stClass(c.st)+'" onchange="setSt('+c.id+',this.value)" aria-label="Status do contrato '+c.id+'">'+ST.map(function(s){return '<option'+(s===c.st?' selected':'')+'>'+s+'</option>'}).join('')+'</select></td><td><select class="st '+stClass(c.fis)+'" onchange="setFisico('+c.id+',this.value)" aria-label="Físico do contrato '+c.id+'">'+FISICO_OPT.map(function(s){return '<option'+(s===c.fis?' selected':'')+'>'+s+'</option>'}).join('')+'</select></td><td><select class="st '+stClass(c.cst)+'" onchange="setComStatus('+c.id+',this.value)" aria-label="Status da comissão do contrato '+c.id+'">'+COMST_OPT.map(function(s){return '<option'+(s===c.cst?' selected':'')+'>'+s+'</option>'}).join('')+'</select></td></tr>'}).join(''):'<tr><td colspan="12" class="mu">Nenhum contrato encontrado. Ajuste a busca ou o status.</td></tr>'}
+function toast(t){var e=$('#toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(function(){e.style.display='none'},2400)}
+function setFisico(id,v){var c=C.filter(function(x){return x.id===id})[0];if(!c)return;c.fis=v;tb();
+ if(sb)sb.from('contratos').update({fisico:v}).eq('id',id).then(function(r){if(r.error)toast('Erro ao salvar: '+r.error.message)});
+ alog('Físico atualizado','Contrato '+id+' → '+v)}
+function setComStatus(id,v){var c=C.filter(function(x){return x.id===id})[0];if(!c)return;c.cst=v;tb();
+ if(sb)sb.from('contratos').update({status_comissao:v}).eq('id',id).then(function(r){if(r.error)toast('Erro ao salvar: '+r.error.message)});
+ alog('Status de comissão atualizado','Contrato '+id+' → '+v)}
+function setSt(id,s,re){if(sb)return setStReal(id,s,re);return setStDemo(id,s,re)}
+function setStReal(id,s,re){sb.from('contratos').update({status:s,motivo_pendencia:s==='Pendente'?undefined:null}).eq('id',id).then(function(r){
+ if(r.error){toast('Erro ao atualizar: '+r.error.message);return}
+ var c=C.filter(function(x){return x.id===id})[0];if(c){c.st=s;if(s!=='Pendente')c.mot=''}
+ alog('Status alterado','Contrato '+id+' → '+s);toast('Contrato '+id+' atualizado para '+s);if(re)go(S.v);else tb()})}
+function setStDemo(id,s,re){var c=C.filter(function(x){return x.id===id})[0];c.st=s;if(s!=='Pendente')c.mot='';alog('Status alterado','Contrato '+id+' → '+s);toast('Contrato '+id+' atualizado para '+s);if(re)go(S.v);else tb()}
+function fillPr(){var m=+$('#f_pm').value;$('#f_pr').innerHTML=PR.map(function(n,i){return PRM[i]===m?'<option value="'+i+'">'+n+' ('+PRT[i]+')</option>':''}).join('')}
+function openNew(){var myProm=S.role==='Admin'?(S.pm?+S.pm:0):minhaPromotoraIdx();
+ $('#f_pm').innerHTML=PM.map(function(n,i){return '<option value="'+i+'"'+(myProm===i?' selected':'')+'>'+esc(n)+'</option>'}).join('');fillPr();$('#f_pd').innerHTML=PD.map(function(n){return '<option>'+n+'</option>'}).join('');$('#f_cv').innerHTML=CV.map(function(n){return '<option>'+n+'</option>'}).join('');
+ $('#f_pm').disabled=S.role!=='Admin';
+ $('#f_pr').disabled=(S.role==='Corretor'||S.role==='Colaborador');
+ if($('#f_pr').disabled)$('#f_pr').value=S.me;
+ $('#f_cpf').value='';$('#f_nasc').value='';$('#f_tel').value='';$('#f_mat').value='';$('#f_aver').value='';$('#f_obs').value='';$('#f_tab').value='';$('#f_vl').value='';
+ $('#f_err').style.display='none';$('#dlg').showModal()}
+function camposExtra(){var cpf=$('#f_cpf').value.trim();
+ if(cpf&&!validarCPF(cpf)){$('#f_err').textContent='CPF inválido. Confira os números digitados.';$('#f_err').style.display='block';return null}
+ return{cpf:cpf,nasc:$('#f_nasc').value||'',tel:$('#f_tel').value.trim(),mat:$('#f_mat').value.trim(),aver:$('#f_aver').value||'',obs:$('#f_obs').value.trim(),tab:$('#f_tab').value.trim(),vl:$('#f_vl').value?+$('#f_vl').value:null}}
+function addC(){if(sb)return addCReal();return addCDemo()}
+function addCReal(){var n=$('#f_cli').value.trim(),v=+$('#f_v').value;if(n.length<3||!(v>=500)){$('#f_err').style.display='block';return}
+ var extra=camposExtra();if(!extra)return;
+ var vi=+$('#f_pr').value,vendId=PRUID[vi],pd=$('#f_pd').value,cv=$('#f_cv').value,pz=+$('#f_pz').value;
+ sb.from('contratos').insert({cliente:n,vendedor_id:vendId,produto:pd,convenio:cv,banco:BK[0],valor:v,valor_liquido:extra.vl,parcelas:pz,status:'Analise Banco',fisico:'-',status_comissao:'AG. CR Cliente',
+  cpf:extra.cpf||null,data_nascimento:extra.nasc||null,telefone:extra.tel||null,matricula:extra.mat||null,data_averbacao:extra.aver||null,observacoes:extra.obs||null,tabela:extra.tab||null}).select().single().then(function(r){
+  if(r.error){$('#f_err').textContent='Erro ao salvar: '+r.error.message;$('#f_err').style.display='block';return}
+  C.unshift({id:r.data.id,cli:n,p:vi,pd:pd,cv:cv,bk:BK[0],v:v,vl:extra.vl,pz:pz,st:'Analise Banco',fis:'-',cst:'AG. CR Cliente',d:0,mot:'',cpf:extra.cpf,nasc:extra.nasc,tel:extra.tel,mat:extra.mat,aver:extra.aver,obs:extra.obs,tab:extra.tab});
+  alog('Contrato cadastrado','Nº '+r.data.id+' - '+n+' ('+brl(v)+')');$('#dlg').close();$('#f_cli').value='';toast('Contrato cadastrado na esteira');go('est')})}
+function addCDemo(){var n=$('#f_cli').value.trim(),v=+$('#f_v').value;if(n.length<3||!(v>=500)){$('#f_err').style.display='block';return}
+ var extra=camposExtra();if(!extra)return;
+ var nid=Math.max.apply(null,C.map(function(c){return c.id}))+1;
+ C.push({id:nid,cli:n,p:+$('#f_pr').value,pd:$('#f_pd').value,cv:$('#f_cv').value,bk:BK[0],v:v,vl:extra.vl,pz:+$('#f_pz').value,st:'Analise Banco',fis:'-',cst:'AG. CR Cliente',d:0,mot:'',cpf:extra.cpf,nasc:extra.nasc,tel:extra.tel,mat:extra.mat,aver:extra.aver,obs:extra.obs,tab:extra.tab});
+ alog('Contrato cadastrado','Nº '+nid+' - '+n+' ('+brl(v)+')');$('#dlg').close();$('#f_cli').value='';toast('Contrato cadastrado na esteira');go('est')}
+var dlg=$('#dlg');
+
+/* ===== AUTENTICAÇÃO (demonstração no navegador) ===== */
+/* Enquanto o número de clientes for pequeno, deixe false para liberar o cadastro de
+   Admin/Gestor sem código. Mude para true assim que quiser reativar a trava de segurança. */
+var EXIGIR_CONVITE=false;
+var ADMIN_CODE='BL3-ADMIN-2026',MEM={},USERS=[],CUR=null,A={mode:'login',msg:''},FAIL={n:0,until:0},RST=null;
+var PM_IDS=[]; /* paralelo a PM: guarda o id real (Supabase) de cada promotora */
+var LOGO='<svg width="44" height="44" viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="22" fill="#14E31F"/><path d="M50 18c-18 0-32 12-32 27 0 9 5 17 13 22-1 6-4 10-8 14 9 0 16-3 21-7 2 .3 4 .4 6 .4 18 0 32-12 32-27S68 18 50 18z" fill="#fff"/><text x="50" y="52" text-anchor="middle" font-family="Sora,sans-serif" font-weight="800" font-size="20" fill="#0000CC">BL3</text></svg>';
+var GLOGO='<svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.2C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.6 5.9c4.4-4.1 7-10.1 7-17.6z"/><path fill="#FBBC05" d="M10.5 28.6A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.1.8-4.6l-7.9-6.2A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.8l7.9-6.2z"/><path fill="#34A853" d="M24 48c6.5 0 12-2.1 16-5.8l-7.6-5.9c-2.1 1.4-4.9 2.3-8.4 2.3-6.3 0-11.6-4.1-13.5-9.9l-7.9 6.2C6.5 42.6 14.6 48 24 48z"/></svg>';
+function sget(k){try{var v=localStorage.getItem(k);return v?JSON.parse(v):null}catch(e){return MEM[k]||null}}
+function sset(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){MEM[k]=v}}
+function esc(x){return String(x).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function gv(id){var e=document.getElementById(id);return e?e.value:''}
+function hp(email,pw){var t=email+'|bl3|'+pw;
+ if(window.crypto&&crypto.subtle&&window.TextEncoder){return crypto.subtle.digest('SHA-256',new TextEncoder().encode(t)).then(function(b){return Array.from(new Uint8Array(b)).map(function(x){return('0'+x.toString(16)).slice(-2)}).join('')})}
+ var h=5381;for(var i=0;i<t.length;i++)h=((h<<5)+h+t.charCodeAt(i))|0;return Promise.resolve('f'+h)}
+function saveUsers(){sset('bl3_users',USERS)}
+function findU(e){e=String(e).trim().toLowerCase();return USERS.filter(function(u){return u.email===e})[0]}
+function ensureVendor(u){if(u.role==='Admin'){if(u.id&&PRUID.indexOf(u.id)<0){}return 0}
+ var i=u.id?PRUID.indexOf(u.id):PR.indexOf(u.name);
+ if(i<0){PR.push(u.name);PRM.push(+u.prom||0);PRT.push(u.role);PRUID.push(u.id||null);i=PR.length-1}
+ return i}
+function okName(n){return /^[A-Za-zÀ-ÿ' .-]{3,60}$/.test(n)}
+function okEmail(e){return /^[^\s@<>"'&]+@[^\s@<>"'&]+\.[^\s@<>"'&]+$/.test(e)}
+function okPw(p){return p.length>=8&&/[A-Za-z]/.test(p)&&/\d/.test(p)}
+var PWMSG='A senha precisa ter pelo menos 8 caracteres, com letras e números.';
+function aerr(m){var e=document.getElementById('a_err');if(e)e.textContent=m;return false}
+function togglePw(id,b){var i=document.getElementById(id);var h=i.type==='password';i.type=h?'text':'password';b.textContent=h?'Ocultar':'Mostrar'}
+function pwField(id,label,ac){return '<label class="al" for="'+id+'">'+label+'</label><div class="pw"><input id="'+id+'" type="password" autocomplete="'+ac+'"><button type="button" class="lk" onclick="togglePw(\''+id+'\',this)">Mostrar</button></div>'}
+function roleFields(){return '<label class="al" for="a_role">Perfil de acesso</label><select id="a_role" onchange="roleChg()"><option>Corretor</option><option>Colaborador</option><option>Gestor</option><option>Admin</option></select>'+
+ '<div id="a_pr"><label class="al" for="a_prom">Promotora</label><select id="a_prom">'+PM.map(function(n,i){return '<option value="'+i+'">'+esc(n)+'</option>'}).join('')+'</select></div>'+
+ '<div id="a_cd" style="display:none"><label class="al" for="a_code">Código de convite</label><input id="a_code" type="password" autocomplete="off" placeholder="Fornecido por quem administra o sistema"></div>'}
+function roleChg(){var r=gv('a_role'),adm=r==='Admin',gest=r==='Gestor';
+ document.getElementById('a_pr').style.display=adm?'none':'block';
+ document.getElementById('a_cd').style.display=(EXIGIR_CONVITE&&(adm||gest))?'block':'none'}
+function showAuth(m,msg){A.mode=m;A.msg=msg||'';renderAuth()}
+function renderAuth(){var m=A.mode,n=A.msg?'<div class="anote" role="status">'+A.msg+'</div>':'',h=LOGO,g='<button type="button" class="btn gbtn" onclick="showAuth(\'google\')">'+GLOGO+' Continuar com Google</button>',or='<div class="or">ou</div>';
+ if(m==='login')h+='<h1>Entrar</h1><p class="sub">Acesse o sistema da financeira</p>'+n+'<label class="al" for="a_em">E-mail</label><input id="a_em" type="email" autocomplete="username" inputmode="email">'+pwField('a_pw','Senha','current-password')+'<div class="aerr" id="a_err" role="alert"></div><button id="a_go" class="btn g" style="width:100%" onclick="doLogin()">Entrar</button>'+or+g+'<div class="alinks"><button class="lk" onclick="showAuth(\'forgot1\')">Esqueci minha senha</button><button class="lk" onclick="showAuth(\'signup\')">Criar conta</button></div>'+(sb?'':'<details class="anote"><summary style="cursor:pointer;font-weight:600">Acessos de demonstração</summary><div style="margin-top:8px;line-height:1.7">Admin: admin@bl3.com.br / Admin@123<br>Corretor: corretor@bl3.com.br / Corretor@123<br>Colaborador: colaborador@bl3.com.br / Colab@1234</div></details>');
+ else if(m==='signup')h+='<h1>Criar conta</h1><p class="sub">Cadastre-se para acessar o sistema</p>'+n+'<label class="al" for="a_nm">Nome completo</label><input id="a_nm" autocomplete="name">'+'<label class="al" for="a_em">E-mail</label><input id="a_em" type="email" autocomplete="username" inputmode="email">'+roleFields()+pwField('a_pw','Senha','new-password')+pwField('a_pw2','Confirmar senha','new-password')+'<div class="aerr" id="a_err" role="alert"></div><button id="a_go" class="btn g" style="width:100%" onclick="doSignup()">Criar conta</button>'+or+g+'<div class="alinks"><button class="lk" onclick="showAuth(\'login\')">Já tenho conta</button></div>';
+ else if(m==='google')h+='<h1>Continuar com Google</h1><p class="sub">Escolha sua conta Google</p><div class="anote">Simulação: o login real com o Google exige um servidor de autenticação (OAuth). Aqui você informa a conta Gmail para testar o fluxo.</div><label class="al" for="a_gnm">Nome</label><input id="a_gnm" autocomplete="name"><label class="al" for="a_em">E-mail Gmail</label><input id="a_em" type="email" inputmode="email" placeholder="voce@gmail.com">'+roleFields()+'<p class="mu" style="font-size:12px">O perfil só é usado no primeiro acesso.</p><div class="aerr" id="a_err" role="alert"></div><button id="a_go" class="btn g" style="width:100%" onclick="doGoogle()">Continuar</button><div class="alinks"><button class="lk" onclick="showAuth(\'login\')">Voltar ao login</button></div>';
+ else if(m==='forgot1')h+='<h1>Esqueci minha senha</h1><p class="sub">Informe seu e-mail para receber um código de redefinição</p>'+n+'<label class="al" for="a_em">E-mail</label><input id="a_em" type="email" autocomplete="username" inputmode="email"><div class="aerr" id="a_err" role="alert"></div><button id="a_go" class="btn g" style="width:100%" onclick="doForgot1()">Enviar código</button><div class="alinks"><button class="lk" onclick="showAuth(\'login\')">Voltar ao login</button></div>';
+ else if(sb)h+='<h1>Nova senha</h1><p class="sub">Escolha uma nova senha para sua conta</p>'+n+pwField('a_pw','Nova senha','new-password')+pwField('a_pw2','Confirmar nova senha','new-password')+'<div class="aerr" id="a_err" role="alert"></div><button id="a_go" class="btn g" style="width:100%" onclick="doForgot2()">Redefinir senha</button><div class="alinks"><button class="lk" onclick="showAuth(\'login\')">Voltar ao login</button></div>';
+ else h+='<h1>Nova senha</h1><p class="sub">Digite o código recebido e escolha uma nova senha</p>'+n+'<label class="al" for="a_cod">Código de 6 dígitos</label><input id="a_cod" inputmode="numeric" maxlength="6" autocomplete="one-time-code">'+pwField('a_pw','Nova senha','new-password')+pwField('a_pw2','Confirmar nova senha','new-password')+'<div class="aerr" id="a_err" role="alert"></div><button id="a_go" class="btn g" style="width:100%" onclick="doForgot2()">Redefinir senha</button><div class="alinks"><button class="lk" onclick="showAuth(\'forgot1\')">Reenviar código</button><button class="lk" onclick="showAuth(\'login\')">Voltar ao login</button></div>';
+ document.getElementById('authBox').innerHTML=h;var f=document.querySelector('#authBox input');if(f)setTimeout(function(){f.focus()},30)}
+function loginOk(u,note){CUR=u;S.real=u.role;S.role=u.role;
+ if(u.role==='Gestor'){S.gestorProm=u.prom||0;S.me=0}else{S.me=u.role==='Admin'?0:ensureVendor(u)}
+ S.v='dash';S.pm='';S.af='';
+ document.getElementById('auth').style.display='none';document.body.classList.remove('locked');renderNav();go('dash');alog(note||'Login realizado',u.email);if(note)toast(note)}
+function logout(){alog('Logout',CUR?CUR.email:'');var done=function(){CUR=null;S.real='';S.role='Admin';
+ if(dlg.open)dlg.close();document.body.classList.add('locked');document.getElementById('auth').style.display='grid';showAuth('login','Você saiu do sistema.')};
+ if(sb)return sb.auth.signOut().then(done);sset('bl3_session',null);done()}
+function traduzErro(m){if(/Invalid login credentials/i.test(m))return 'E-mail ou senha incorretos.';
+ if(/already registered|already exists/i.test(m))return 'Este e-mail já está cadastrado.';
+ if(/Password should be/i.test(m))return PWMSG;
+ if(/rate limit/i.test(m))return 'Muitas tentativas. Aguarde um pouco e tente novamente.';
+ return m}
+function carregarPromotoras(){return sb.from('promotoras').select('id,nome').order('nome').then(function(r){
+ if(!r.error&&r.data&&r.data.length){PM=r.data.map(function(x){return x.nome});PM_IDS=r.data.map(function(x){return x.id})}
+ else if(r.error)toast('Erro ao carregar promotoras: '+r.error.message)})}
+function carregarPerfisEContratos(){
+ return sb.from('profiles').select('id,nome,role,promotora_id').then(function(rp){
+  if(rp.error){toast('Erro ao carregar equipe: '+rp.error.message);return{data:[]}}
+  var vend=(rp.data||[]).filter(function(p){return p.role==='Corretor'||p.role==='Colaborador'||p.role==='Gestor'});
+  PR=vend.map(function(p){return p.nome});PRUID=vend.map(function(p){return p.id});PRT=vend.map(function(p){return p.role});
+  PRM=vend.map(function(p){var i=PM_IDS.indexOf(p.promotora_id);return i<0?0:i});
+  return sb.from('contratos').select('*').order('id',{ascending:false})
+ }).then(function(rc){
+  if(!rc||rc.error){C=[];if(rc&&rc.error)toast('Erro ao carregar contratos: '+rc.error.message);return}
+  C=(rc.data||[]).map(function(x){var vi=PRUID.indexOf(x.vendedor_id);
+   if(vi<0){PR.push('(sem perfil)');PRUID.push(x.vendedor_id);PRM.push(0);PRT.push('Corretor');vi=PR.length-1}
+   return{id:x.id,cli:x.cliente,p:vi,pd:x.produto||'',cv:x.convenio||'',bk:x.banco||'',v:+x.valor,pz:x.parcelas,st:x.status,d:Math.max(0,Math.floor((Date.now()-new Date(x.criado_em))/86400000)),mot:x.motivo_pendencia||'',cpf:x.cpf||'',nasc:x.data_nascimento||'',tel:x.telefone||'',mat:x.matricula||'',aver:x.data_averbacao||'',obs:x.observacoes||'',tab:x.tabela||'',vl:x.valor_liquido||null,fis:x.fisico||'-',cst:x.status_comissao||'AG. CR Cliente'}})
+ })}
+function resolveProfile(user,note){
+ sb.from('profiles').select('*').eq('id',user.id).single().then(function(r){
+  if(r.error||!r.data){
+   var pend=sget('bl3_pending_role')||{},role=pend.role||'Colaborador',promIdx=(pend.prom!=null?pend.prom:0),nome=pend.nome||(user.email.split('@')[0]);
+   sb.from('profiles').insert({id:user.id,nome:nome,role:role,promotora_id:role==='Admin'?null:PM_IDS[promIdx]}).then(function(ins){
+    if(ins.error){aerr('Conta criada, mas houve um erro ao salvar o perfil: '+ins.error.message);return}
+    sset('bl3_pending_role',null);
+    carregarPerfisEContratos().then(function(){loginOk({name:nome,email:user.email,role:role,prom:promIdx,id:user.id,provider:'supabase'},note||'Conta criada com sucesso')})})
+  }else{
+   var promIdx=PM_IDS.indexOf(r.data.promotora_id);
+   carregarPerfisEContratos().then(function(){loginOk({name:r.data.nome,email:user.email,role:r.data.role,prom:promIdx<0?0:promIdx,id:user.id,provider:'supabase'},note)})
+  }})}
+function doLogin(){if(sb)return doLoginReal();return doLoginDemo()}
+function doLoginReal(){var em=gv('a_em').trim().toLowerCase(),pw=gv('a_pw');
+ if(!em||!pw)return aerr('Informe e-mail e senha.');
+ sb.auth.signInWithPassword({email:em,password:pw}).then(function(r){
+  if(r.error)return aerr(traduzErro(r.error.message));
+  resolveProfile(r.data.user)})}
+function doLoginDemo(){var em=gv('a_em').trim().toLowerCase(),pw=gv('a_pw');
+ if(Date.now()<FAIL.until)return aerr('Muitas tentativas. Aguarde 30 segundos e tente novamente.');
+ if(!em||!pw)return aerr('Informe e-mail e senha.');
+ var u=findU(em);
+ hp(em,pw).then(function(h){
+  if(!u||!u.hash||u.hash!==h){FAIL.n++;if(FAIL.n>=5){FAIL.until=Date.now()+30000;FAIL.n=0}return aerr('E-mail ou senha incorretos.')}
+  FAIL.n=0;sset('bl3_session',u.email);loginOk(u)})}
+function checkRole(nm){var role=gv('a_role');
+ if(EXIGIR_CONVITE&&role==='Admin'){if(gv('a_code').trim()!==ADMIN_CODE)return 'Código de convite inválido.'}
+ if(role!=='Admin'){var prom=+gv('a_prom');for(var i=0;i<PR.length;i++){if(PR[i]===nm&&PRM[i]===prom)return 'Já existe um vendedor com esse nome nessa promotora. Use seu nome completo.'}}
+ return ''}
+function newUser(nm,em,h,prov){var role=gv('a_role'),u={name:nm,email:em,role:role,prom:role==='Admin'?0:+gv('a_prom'),hash:h,provider:prov};USERS.push(u);saveUsers();ensureVendor(u);sset('bl3_session',u.email);return u}
+function doSignup(){if(sb)return doSignupReal();return doSignupDemo()}
+function doSignupReal(){var nm=gv('a_nm').trim(),em=gv('a_em').trim().toLowerCase(),pw=gv('a_pw'),pw2=gv('a_pw2'),role=gv('a_role'),prom=role==='Admin'?null:+gv('a_prom');
+ if(!okName(nm))return aerr('Informe seu nome completo (apenas letras).');
+ if(!okEmail(em))return aerr('Informe um e-mail válido.');
+ if(!okPw(pw))return aerr(PWMSG);
+ if(pw!==pw2)return aerr('As senhas não conferem.');
+ if(EXIGIR_CONVITE&&(role==='Admin'||role==='Gestor')){var cod=gv('a_code').trim();if(!cod)return aerr('Informe o código de convite.');
+  return sb.rpc('validar_convite',{p_codigo:cod,p_role:role,p_promotora_id:role==='Gestor'?prom:null}).then(function(rc){
+   if(rc.error||!rc.data)return aerr('Código de convite inválido para esse perfil/promotora.');
+   criarContaReal(nm,em,pw,role,prom)})}
+ criarContaReal(nm,em,pw,role,prom)}
+function criarContaReal(nm,em,pw,role,promIdx){
+ sb.auth.signUp({email:em,password:pw}).then(function(r){
+  if(r.error)return aerr(traduzErro(r.error.message));
+  if(!r.data.session)return showAuth('login','Enviamos um e-mail de confirmação para '+em+'. Clique no link para ativar sua conta e depois entre normalmente.');
+  var uid=r.data.user.id;
+  sb.from('profiles').insert({id:uid,nome:nm,role:role,promotora_id:role==='Admin'?null:PM_IDS[promIdx]}).then(function(pr){
+   if(pr.error)return aerr('Conta criada, mas houve um erro ao salvar o perfil: '+pr.error.message);
+   carregarPerfisEContratos().then(function(){loginOk({name:nm,email:em,role:role,prom:promIdx||0,id:uid,provider:'supabase'},'Conta criada com sucesso')})})})}
+function doSignupDemo(){var nm=gv('a_nm').trim(),em=gv('a_em').trim().toLowerCase(),pw=gv('a_pw'),pw2=gv('a_pw2');
+ if(!okName(nm))return aerr('Informe seu nome completo (apenas letras).');
+ if(!okEmail(em))return aerr('Informe um e-mail válido.');
+ if(findU(em))return aerr('Este e-mail já está cadastrado.');
+ var er=checkRole(nm);if(er)return aerr(er);
+ if(!okPw(pw))return aerr(PWMSG);
+ if(pw!==pw2)return aerr('As senhas não conferem.');
+ hp(em,pw).then(function(h){loginOk(newUser(nm,em,h,'email'),'Conta criada com sucesso')})}
+function doGoogle(){if(sb)return doGoogleReal();return doGoogleDemo()}
+function doGoogleReal(){var role=gv('a_role'),prom=role==='Admin'?null:+gv('a_prom'),nome=gv('a_gnm').trim(),ir=function(){sset('bl3_pending_role',{role:role,prom:prom,nome:nome});
+  sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.href}})};
+ if(EXIGIR_CONVITE&&(role==='Admin'||role==='Gestor')){var cod=gv('a_code').trim();if(!cod)return aerr('Informe o código de convite.');
+  return sb.rpc('validar_convite',{p_codigo:cod,p_role:role,p_promotora_id:role==='Gestor'?prom:null}).then(function(rc){
+   if(rc.error||!rc.data)return aerr('Código de convite inválido para esse perfil/promotora.');ir()})}
+ ir()}
+function doGoogleDemo(){var nm=gv('a_gnm').trim(),em=gv('a_em').trim().toLowerCase();
+ if(!okEmail(em)||!/@(gmail|googlemail)\.com$/.test(em))return aerr('Informe um e-mail Gmail válido (voce@gmail.com).');
+ var u=findU(em);
+ if(u){if(u.provider!=='google')return aerr('Este e-mail já tem cadastro com senha. Entre com e-mail e senha.');sset('bl3_session',u.email);return loginOk(u)}
+ if(!okName(nm))return aerr('Informe seu nome (apenas letras).');
+ var er=checkRole(nm);if(er)return aerr(er);
+ loginOk(newUser(nm,em,null,'google'),'Conta criada com Google')}
+function doForgot1(){if(sb)return doForgot1Real();return doForgot1Demo()}
+function doForgot1Real(){var em=gv('a_em').trim().toLowerCase();
+ if(!okEmail(em))return aerr('Informe um e-mail válido.');
+ sb.auth.resetPasswordForEmail(em,{redirectTo:window.location.origin+window.location.pathname}).then(function(r){
+  if(r&&r.error)return aerr(/rate limit|security purposes|seconds/i.test(r.error.message)?'Muitos pedidos seguidos. Aguarde alguns minutos e tente de novo (limite de e-mails do Supabase).':'Não foi possível enviar: '+r.error.message);
+  showAuth('login','Se o e-mail estiver cadastrado, enviamos um link de redefinição. Confira a caixa de entrada e o spam, e abra o link neste mesmo navegador.')})}
+function doForgot1Demo(){var em=gv('a_em').trim().toLowerCase();
+ if(!okEmail(em))return aerr('Informe um e-mail válido.');
+ var u=findU(em);RST=null;
+ if(u){var c;if(window.crypto&&crypto.getRandomValues){var r=new Uint32Array(1);crypto.getRandomValues(r);c=100000+r[0]%900000}else c=100000+Math.floor(Math.random()*900000);
+  RST={email:u.email,code:String(c),exp:Date.now()+600000,tries:0}}
+ showAuth('forgot2','Se o e-mail estiver cadastrado, enviamos um código de 6 dígitos válido por 10 minutos.'+(RST?'<br><b>Modo demonstração</b> (sem servidor de e-mail): seu código é <b>'+RST.code+'</b>.':''))}
+function doForgot2(){if(sb)return doForgot2Real();return doForgot2Demo()}
+function doForgot2Real(){var pw=gv('a_pw'),pw2=gv('a_pw2');
+ if(!okPw(pw))return aerr(PWMSG);
+ if(pw!==pw2)return aerr('As senhas não conferem.');
+ sb.auth.updateUser({password:pw}).then(function(r){
+  if(r.error)return aerr(traduzErro(r.error.message));
+  RECOVERY=false;try{history.replaceState(null,'',location.pathname)}catch(e){}
+  sb.auth.signOut().then(function(){showAuth('login','Senha redefinida com sucesso. Entre com a nova senha.')})})}
+function doForgot2Demo(){var c=gv('a_cod').trim(),pw=gv('a_pw'),pw2=gv('a_pw2');
+ if(!RST||Date.now()>RST.exp)return aerr('Código inválido ou expirado. Solicite um novo.');
+ if(++RST.tries>5){RST=null;return aerr('Muitas tentativas. Solicite um novo código.')}
+ if(c!==RST.code)return aerr('Código incorreto.');
+ if(!okPw(pw))return aerr(PWMSG);
+ if(pw!==pw2)return aerr('As senhas não conferem.');
+ var em=RST.email;hp(em,pw).then(function(h){var u=findU(em);u.hash=h;saveUsers();RST=null;FAIL={n:0,until:0};showAuth('login','Senha redefinida com sucesso. Entre com a nova senha.')})}
+function boot(){if(sb)return bootReal();return bootDemo()}
+function bootReal(){showAuth('login');
+ if(LINK_ERRO)showAuth('forgot1','Esse link expirou ou já foi usado. Informe seu e-mail para receber um novo.');
+ else if(RECOVERY)showAuth('forgot2','Defina sua nova senha.');
+ sb.auth.onAuthStateChange(function(ev){if(ev==='PASSWORD_RECOVERY'){RECOVERY=true;showAuth('forgot2','Defina sua nova senha.')}});
+ carregarPromotoras().then(function(){if(A.mode==='signup')renderAuth();
+  sb.auth.getSession().then(function(r){var s=r.data.session;if(s&&!RECOVERY&&!LINK_ERRO)resolveProfile(s.user,'Sessão restaurada')})})}
+function bootDemo(){USERS=sget('bl3_users')||[];
+ var seed=[['Administrador BL3','admin@bl3.com.br','Admin','Admin@123'],['Bruno Lima','corretor@bl3.com.br','Corretor','Corretor@123'],['Carla Mendes','colaborador@bl3.com.br','Colaborador','Colab@1234']];
+ function done(){USERS.forEach(ensureVendor);var em=sget('bl3_session'),u=em&&findU(em);if(u)loginOk(u,'Sessão restaurada');else showAuth('login')}
+ showAuth('login');
+ if(USERS.length)return done();
+ Promise.all(seed.map(function(d){return hp(d[1],d[3])})).then(function(hs){
+  USERS=seed.map(function(d,i){var pi=PR.indexOf(d[0]);return{name:d[0],email:d[1],role:d[2],prom:pi>-1?PRM[pi]:0,hash:hs[i],provider:'email'}});saveUsers();done()})}
+document.getElementById('authBox').addEventListener('keydown',function(e){if(e.key==='Enter'&&e.target.tagName==='INPUT'){var b=document.getElementById('a_go');if(b)b.click()}});
+boot();
+</script>
+</body>
+</html>
